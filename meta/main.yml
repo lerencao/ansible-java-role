@@ -1,0 +1,23 @@
+---
+dependencies: []
+
+galaxy_info:
+  author: lerencao
+  description: Install Oracle Java for RHEL/CentOS 6.x and Debian/Ubuntu
+  company: ""
+  license: "license (BSD, MIT)"
+  min_ansible_version: 1.8
+  platforms:
+  - name: EL
+    versions:
+    - 6
+  - name: Debian
+    versions:
+    - all
+  - name: Ubuntu
+    versions:
+    - all
+  categories:
+    - development
+    - system
+    - web

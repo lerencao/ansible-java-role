@@ -1,0 +1,41 @@
+---
+- name: Ensure wget dependency is installed (Debian).
+  apt: name=wget state=installed
+  when: ansiable_os_family == 'Debian'
+- name: Ensure wget dependency is installed (RedHat).
+  yum: name=wget state=installed
+  when: ansiable_os_family == 'RedHat'
+
+- name: Oracle Java Installation >>> 1. Load version variables
+  include_vars: "{{ jdk_version }}.yml"
+  tags:
+    - java
+
+- name: Oracle Java Installation >>> 2. Download Oracle Java SDK {{ oracle_jdk_archive_name }}
+  command: "wget -c -N -O {{ oracle_jdk_archive_name }} --no-cookies --no-check-certificate --header 'Cookie: oraclelicense=accept-securebackup-cookie' {{ oracle_jdk_mirror }}"
+  args:
+    chdir: /tmp
+  tags:
+    - java
+
+- name: Oracle Java Installation >>> 3. Ensure java install dir exists and is writable to user {{ ansible_user }}
+  sudo: yes
+  file: path={{ install_dir }} state=directory mode=u+rw
+  tags:
+    - java
+
+- name: Oracle Java Installation >>> 4. Unpack Archive to {{ install_dir }}
+  shell: tar -zxf {{ oracle_jdk_archive_name }} -C {{ install_dir }}
+  args:
+    chdir: /tmp
+    creates: "{{ install_dir }}/{{ oracle_jdk_dir_name }}"
+  tags:
+    - java
+
+- name: Oracle Java Installation >>> 5. Add java path to profile system-wide
+  sudo: yes
+  template: src=java.sh.j2 dest=/etc/profile.d/java.sh owner=root group=root mode=0755
+  tags:
+    - java
+  notify:
+    - exec shell with login

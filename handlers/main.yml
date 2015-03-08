@@ -1,0 +1,3 @@
+---
+- name: exec shell with login
+  shell: exec $SHELL -l
