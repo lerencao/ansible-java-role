@@ -1,5 +1,7 @@
 # Ansible Role: Java
 
+[![Build Status](https://travis-ci.org/lerencao/ansible-java-role.svg?branch=master)](https://travis-ci.org/lerencao/ansible-java-role)
+
 ## Requirements
 
 None.
