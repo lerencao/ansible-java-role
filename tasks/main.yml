@@ -1,41 +1,84 @@
 ---
-- name: Ensure wget dependency is installed (Debian).
-  apt: name=wget state=installed
-  when: ansiable_os_family == 'Debian'
-- name: Ensure wget dependency is installed (RedHat).
-  yum: name=wget state=installed
-  when: ansiable_os_family == 'RedHat'
-
-- name: Oracle Java Installation >>> 1. Load version variables
-  include_vars: "{{ jdk_version }}.yml"
+# Fail the role if it runs on an unsupported platform
+- name: Assert platform is supported
+  assert:
+    that:
+      - ansible_os_family in ['Debian', 'RedHat']
+      - ansible_architecture in ['x86_64']
   tags:
     - java
 
-- name: Oracle Java Installation >>> 2. Download Oracle Java SDK {{ oracle_jdk_archive_name }}
-  command: "wget -c -N -O {{ oracle_jdk_archive_name }} --no-cookies --no-check-certificate --header 'Cookie: oraclelicense=accept-securebackup-cookie' {{ oracle_jdk_mirror }}"
-  args:
-    chdir: /tmp
+# Load version specific variables
+- name: Load version variables
+  include_vars: "versions/{{ jdk_version }}.yml"
   tags:
     - java
 
-- name: Oracle Java Installation >>> 3. Ensure java install dir exists and is writable to user {{ ansible_user }}
-  sudo: yes
-  file: path={{ install_dir }} state=directory mode=u+rw
+# this directory will contain the Java downloads
+- name: Check java download directory (local)
+  local_action: file state=directory mode=0755 dest={{ jdk_download_dir }}
   tags:
     - java
 
-- name: Oracle Java Installation >>> 4. Unpack Archive to {{ install_dir }}
-  shell: tar -zxf {{ oracle_jdk_archive_name }} -C {{ install_dir }}
-  args:
-    chdir: /tmp
-    creates: "{{ install_dir }}/{{ oracle_jdk_dir_name }}"
+- name: Get oracle java package stat (local)
+  local_action: stat path={{ jdk_download_dir }}/{{ oracle_jdk_pkg_name }} get_md5=yes
+  register: oracle_jdk_pkg
+  ignore_errors: true
   tags:
     - java
 
-- name: Oracle Java Installation >>> 5. Add java path to profile system-wide
+
+- name: Download oracle java  package (local)
+  local_action: command curl
+    --location
+    --insecure
+    --remote-name
+    --cookie oraclelicense=accept-securebackup-cookie
+    --cookie-jar {{ jdk_download_dir }}/{{ oracle_jdk_pkg_name }}.cookie
+    {{ oracle_jdk_pkg_mirror }}
+    chdir={{ jdk_download_dir }}
+  register: oracle_jdk_pkg_download
+  when: not oracle_jdk_pkg.stat.exists or oracle_jdk_pkg.stat.md5 != "{{ oracle.md5_checksum }}"
+  tags:
+    - java
+
+
+- name: Get oracle java package stat (local)
+  local_action: stat path={{ jdk_download_dir }}/{{ oracle_jdk_pkg_name }}
+  register: oracle_jdk_pkg
+  ignore_errors: true
+  when: oracle_jdk_pkg_download|changed
+  tags:
+    - java
+
+- name: Verify oracle java package md5sum (local)
+  fail: msg="uncompleted java package"
+  when:
+    - oracle_jdk_pkg_download|changed
+    - not oracle_jdk_pkg.stat.exists or oracle_jdk_pkg.stat.md5 != "{{ oracle.md5_checksum }}"
+  tags:
+    - java
+
+- name: Check java install dir
+  file: state=directory mode=0755 dest={{ install_dir }}
+  tags: java
+
+- name: Install oracle java to remote nodes
+  unarchive:
+    src={{ jdk_download_dir }}/{{ oracle_jdk_pkg_name }}
+    dest={{ install_dir }}
+    mode=0755
+    creates={{ install_dir }}/{{ oracle_jdk_dir_name }}
+  tags: java
+
+- name: Set JAVA_HOME ansible fact
+  set_fact:
+    java_home={{ install_dir }}/{{ oracle_jdk_dir_name }}
+  tags: java
+
+
+- name: Add java path to profile system-wide
   sudo: yes
   template: src=java.sh.j2 dest=/etc/profile.d/java.sh owner=root group=root mode=0755
   tags:
     - java
-  notify:
-    - exec shell with login

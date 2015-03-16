@@ -1,12 +1,7 @@
 ---
+# helper variables
 oracle_jdk_mirror_base: "http://download.oracle.com/otn-pub/java/jdk"
 
-# helper variables
-{% if ansible_architecture == 'x86_64' %}
-oracle_jdk_archive_name: "jdk-{{ oracle.minor_version }}u{{ oracle.update_version }}-linux-x64.tar.gz"
-oracle_jdk_dir_name: "jdk{{ oracle.major_version }}.{{ oracle.minor_version }}.{{ oracle.patch_version }}_{{ oracle_update_version }}"
-{% else %}
-oracle_jdk_archive_name: "jdk-{{ oracle.minor_version }}u{{ oracle.update_version }}-linux-i586.tar.gz"
-{% endif %}
-
-oracle_jdk_mirror: "{{ oracle_jdk_mirror_base }}/{{ oracle.minor_version }}u{{ oracle.update_version }}-b{{ oracle.build_version }}/{{ oracle_jdk_archive_name }}"
+oracle_jdk_pkg_name: "jdk-{{ oracle.minor_version }}u{{ oracle.update_version }}-linux-x64.tar.gz"
+oracle_jdk_dir_name: "jdk{{ oracle.major_version }}.{{ oracle.minor_version }}.{{ oracle.patch_version }}_{{ oracle.update_version }}"
+oracle_jdk_pkg_mirror: "{{ oracle_jdk_mirror_base }}/{{ oracle.minor_version }}u{{ oracle.update_version }}-b{{ oracle.build_version }}/{{ oracle_jdk_pkg_name }}"

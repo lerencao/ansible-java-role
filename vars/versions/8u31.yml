@@ -1,7 +1,0 @@
----
-oracle:
-  major_version: 1
-  minor_version: 8
-  patch_vercion: 0
-  update_version: 31
-  build_version: 13
