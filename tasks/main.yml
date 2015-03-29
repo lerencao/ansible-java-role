@@ -21,7 +21,7 @@
     - java
 
 - name: Get oracle java package stat (local)
-  local_action: stat path={{ jdk_download_dir }}/{{ oracle_jdk_pkg_name }} get_md5=yes
+  local_action: stat path={{ jdk_download_dir }}/{{ oracle_jdk_pkg_name }}
   register: oracle_jdk_pkg
   ignore_errors: true
   tags:
@@ -38,26 +38,10 @@
     {{ oracle_jdk_pkg_mirror }}
     chdir={{ jdk_download_dir }}
   register: oracle_jdk_pkg_download
-  when: not oracle_jdk_pkg.stat.exists or oracle_jdk_pkg.stat.md5 != "{{ oracle.md5_checksum }}"
+  when: not oracle_jdk_pkg.stat.exists
   tags:
     - java
 
-
-- name: Get oracle java package stat (local)
-  local_action: stat path={{ jdk_download_dir }}/{{ oracle_jdk_pkg_name }}
-  register: oracle_jdk_pkg
-  ignore_errors: true
-  when: oracle_jdk_pkg_download|changed
-  tags:
-    - java
-
-- name: Verify oracle java package md5sum (local)
-  fail: msg="uncompleted java package"
-  when:
-    - oracle_jdk_pkg_download|changed
-    - not oracle_jdk_pkg.stat.exists or oracle_jdk_pkg.stat.md5 != "{{ oracle.md5_checksum }}"
-  tags:
-    - java
 
 - name: Check java install dir
   file: state=directory mode=0755 dest={{ install_dir }}
